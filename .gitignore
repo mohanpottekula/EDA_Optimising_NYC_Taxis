@@ -1,1 +1,3 @@
 /Datasets and Dictionary/
+.venv/
+yellow_taxi_2023_sampled.parquet
