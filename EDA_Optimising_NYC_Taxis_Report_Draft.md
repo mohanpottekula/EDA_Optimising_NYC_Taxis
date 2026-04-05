@@ -4,121 +4,41 @@ Name: `<Your Name>`
 
 Assignment ID: `EDA/02`
 
-## 1. Problem Statement
+## 1. Introduction
 
-This analysis uses 2023 NYC yellow taxi trip data to identify patterns in demand, revenue, pricing, route efficiency, and customer behavior. The business objective is to use these patterns to improve taxi availability, route planning, pricing decisions, and overall customer experience.
+New York City yellow taxis operate in a fast-moving environment where demand changes by hour, day, location, and season. Because of this, taxi operators cannot rely on a fixed strategy throughout the year. They need to understand where demand is strongest, when trips are most frequent, which routes are efficient or inefficient, and how pricing and customer behavior change across different kinds of trips.
 
-## 2. Methodology
+The purpose of this analysis is to study the 2023 NYC yellow taxi trip data and use it to identify patterns that can support better operational decisions. The main focus is on demand trends, revenue trends, trip characteristics, geographical concentration, tipping behavior, and route efficiency. Based on these findings, the report proposes recommendations on dispatching, cab positioning, and pricing strategy.
 
-The raw dataset contained 12 monthly parquet files for 2023, along with the NYC taxi zone shapefile. Since the full dataset is very large, a representative sample was created to make the analysis computationally practical while preserving time-based demand patterns.
+## 2. Data and Analytical Approach
 
-### 2.1 Sampling Approach
+The dataset consisted of 12 monthly parquet files for 2023, along with the taxi zone shapefile used for geographic analysis. Since the full-year data was too large to combine directly in memory, a sampled dataset was created first.
 
-- Sampling was performed by pickup date and pickup hour.
-- A `0.8%` sample was drawn from each date-hour group.
-- This preserved hourly and monthly demand variation better than taking one random sample from the full year.
+To make sure the sample still reflected actual travel patterns, sampling was done separately for each pickup date and pickup hour. A `0.8%` sample was taken from every date-hour group. This was a better approach than taking one random sample from the entire year, because it preserved the hourly structure of taxi demand across all months.
 
-### 2.2 Sample Size
+After sampling, the combined dataset contained `308,007` rows. Once missing values, invalid values, and outliers were handled, the final analytical dataset contained `304,630` rows. This size was manageable for analysis while still large enough to preserve clear patterns.
 
-Monthly sample sizes ranged from about `22,727` to `28,262` rows. The combined sampled dataset contained `308,007` rows before cleaning and `304,630` rows after cleaning and outlier treatment.
+## 3. Data Preparation and Cleaning
 
-This final size is appropriate for EDA and remains close to the target range mentioned in the assignment.
+The first step in cleaning the dataset was to fix structural issues. One of the clearest problems was the presence of two airport fee columns, `airport_fee` and `Airport_fee`, which appeared to represent the same information with different capitalization. These were combined into a single `airport_fee` column. Unnecessary index-like columns were removed, and column names were standardized for consistency.
 
-## 3. Data Cleaning
+The dataset also contained a small but noticeable amount of missing data. The main fields affected were `passenger_count`, `RatecodeID`, `store_and_fwd_flag`, and `congestion_surcharge`, each with around `3.39%` missing values. Missing and zero values in `passenger_count` were replaced with the most common value, which was `1`. Missing `RatecodeID` values were also filled with the mode, `1`. Missing `store_and_fwd_flag` values were set to `N`, and missing `congestion_surcharge` values were replaced with `0`. These decisions were reasonable because the missing proportion was small and the replacements matched the most common trip profile in the dataset.
 
-### 3.1 Structural Fixes
+Another issue was the presence of a few negative values in columns such as `mta_tax`, `improvement_surcharge`, `total_amount`, `congestion_surcharge`, and `extra`. These values were clearly invalid in context, so they were corrected to `0`. No negative values were found in `fare_amount`, which was a good sign.
 
-- Duplicate airport fee columns, `airport_fee` and `Airport_fee`, were merged into one standardized column.
-- Unnecessary index-style columns were removed.
-- Column names were standardized to lowercase for consistency.
+Outlier analysis showed that some records had impossible or highly unrealistic values. For example, before treatment the maximum `trip_distance` was `22,528.82`, while the maximum `fare_amount` and `total_amount` were both above `143,000`. These values are not credible for normal NYC taxi operations and were likely caused by data-entry or system errors. To make the dataset suitable for business analysis, passenger counts above `6` were removed, trips shorter than `1` minute or longer than `240` minutes were filtered out, and very large values in `trip_distance`, `fare_amount`, `tip_amount`, and `total_amount` were capped at the `99.5th` percentile. After treatment, the highest values were much more realistic: `21.82` miles for trip distance, `89.80` for fare amount, and `114.19` for total amount.
 
-### 3.2 Missing Values
+Overall, the cleaning process improved the reliability of the dataset without removing the natural variation needed for exploratory analysis.
 
-The main missing values were found in:
+## 4. General Exploratory Analysis
 
-- `passenger_count`: `3.39%`
-- `RatecodeID`: `3.39%`
-- `store_and_fwd_flag`: `3.39%`
-- `congestion_surcharge`: `3.39%`
+The variables in the dataset naturally fell into three broad types. Numerical variables included `trip_distance`, `fare_amount`, `tip_amount`, `total_amount`, `passenger_count`, and `trip_duration_min`. Categorical variables included fields such as `vendorid`, `ratecodeid`, `payment_type`, `store_and_fwd_flag`, and the pickup and dropoff location identifiers. Pickup and dropoff timestamps were treated as datetime variables and later used to derive features such as hour of day, day of week, month, and quarter.
 
-Handling decisions:
+### 4.1 Demand by Time
 
-- Missing and zero `passenger_count` values were replaced with the mode, `1`.
-- Missing `RatecodeID` values were replaced with the mode, `1`.
-- Missing `congestion_surcharge` values were filled with `0`.
-- Missing `store_and_fwd_flag` values were filled with `N`.
+The clearest pattern in the data was the concentration of demand in the late afternoon and early evening. The busiest hour in the sampled data was `18:00`, which is consistent with after-work travel and evening activity. The busiest day was `Thursday`, and the busiest month was `October`.
 
-These decisions were reasonable because the missing proportions were small and the replacements matched the most common operational case in the data.
-
-### 3.3 Invalid Values
-
-No negative values were found in `fare_amount`, but a very small number of negative values appeared in columns such as `mta_tax`, `improvement_surcharge`, `congestion_surcharge`, `total_amount`, and `extra`. These were treated as invalid records and set to `0`.
-
-### 3.4 Outliers
-
-Some values were clearly unrealistic before treatment. For example:
-
-- Maximum `trip_distance`: `22,528.82`
-- Maximum `fare_amount`: `143,163.45`
-- Maximum `total_amount`: `143,167.45`
-
-These values are not realistic for standard taxi trips and likely came from reporting or system errors.
-
-Outlier treatment:
-
-- Passenger counts above `6` were removed.
-- Trips shorter than `1` minute or longer than `240` minutes were removed.
-- `trip_distance`, `fare_amount`, `tip_amount`, and `total_amount` were capped at the `99.5th` percentile.
-
-After treatment:
-
-- Maximum `trip_distance`: `21.82`
-- Maximum `fare_amount`: `89.80`
-- Maximum `total_amount`: `114.19`
-- Maximum `trip_duration_min`: `75.25`
-
-This made the dataset much more realistic for business analysis without discarding normal trip behavior.
-
-## 4. General EDA
-
-### 4.1 Variable Types
-
-Numerical variables included:
-
-- `passenger_count`
-- `trip_distance`
-- `fare_amount`
-- `tip_amount`
-- `total_amount`
-- `trip_duration_min`
-
-Categorical variables included:
-
-- `vendorid`
-- `ratecodeid`
-- `store_and_fwd_flag`
-- `payment_type`
-- `pulocationid`
-- `dolocationid`
-- `pickup_day_name`
-- `pickup_month_name`
-
-Datetime variables:
-
-- `tpep_pickup_datetime`
-- `tpep_dropoff_datetime`
-
-### 4.2 Temporal Patterns
-
-Taxi demand is concentrated in the late afternoon and early evening.
-
-Key findings:
-
-- Busiest hour: `18:00`
-- Busiest day: `Thursday`
-- Busiest month: `October`
-
-Estimated actual trip counts for the five busiest hours:
+When the hourly counts were scaled using the sampling fraction, the five busiest hours were all clustered in the afternoon and evening:
 
 - `18:00`: `2,678,625`
 - `17:00`: `2,554,750`
@@ -126,49 +46,28 @@ Estimated actual trip counts for the five busiest hours:
 - `15:00`: `2,345,500`
 - `16:00`: `2,344,250`
 
-Interpretation:
+This is an important operational finding. It suggests that the strongest pressure on taxi supply does not occur randomly through the day. Instead, it builds toward the evening, meaning drivers should already be positioned and available before the peak begins.
 
-- The strongest demand window is the late-afternoon to evening period.
-- Supply should be ramped up before the evening peak rather than after it starts.
-- Thursday appears to be the strongest weekday for taxi activity, likely reflecting both work and leisure travel.
+### 4.2 Revenue Trends
 
-### 4.3 Revenue Trends
+Revenue varied noticeably across the year. Based on the sampled data, the strongest revenue months were `May` at `809,656.92` and `October` at `806,265.72`, while the weakest were `February` at `626,706.67` and `August` at `634,866.36`. This shows that revenue opportunity is not evenly distributed through the year.
 
-Monthly sampled revenue was highest in:
-
-- `May`: `809,656.92`
-- `October`: `806,265.72`
-
-It was lowest in:
-
-- `February`: `626,706.67`
-- `August`: `634,866.36`
-
-Quarterly revenue share:
+Quarterly revenue shares supported the same conclusion:
 
 - Q1: `23.75%`
 - Q2: `26.82%`
 - Q3: `22.62%`
 - Q4: `26.81%`
 
-Interpretation:
+Q2 and Q4 made the largest contribution to total revenue, which suggests stronger business conditions in those periods. From an operator’s point of view, this means staffing and planning decisions should consider seasonal variation rather than assuming one steady pattern across the year.
 
-- Revenue is strongest in Q2 and Q4.
-- This suggests that both demand and monetization vary through the year and should be considered in planning and promotional strategy.
+### 4.3 Fare, Distance, and Duration
 
-### 4.4 Fare, Distance, and Duration
+The financial variables behaved largely as expected. The relationship between `trip_distance` and `fare_amount` was extremely strong, with a correlation of `0.961`. The relationship between trip duration and fare was also strong, with a correlation of `0.873`.
 
-The strongest numerical relationships in the dataset were:
+This indicates that both distance and time matter in explaining how much a trip earns. Distance is the strongest direct driver, but trip duration is also important because congestion increases the time spent on a trip and therefore affects fare and driver productivity.
 
-- Correlation between `trip_distance` and `fare_amount`: `0.961`
-- Correlation between `trip_duration_min` and `fare_amount`: `0.873`
-
-Interpretation:
-
-- Fare is strongly driven by distance.
-- Trip duration also matters, which reflects the effect of congestion and slower travel conditions.
-
-Average fare by passenger count:
+Average fare by passenger count did not increase in a simple linear way:
 
 - 1 passenger: `18.93`
 - 2 passengers: `21.82`
@@ -177,21 +76,13 @@ Average fare by passenger count:
 - 5 passengers: `18.71`
 - 6 passengers: `18.95`
 
-Fare does not increase in a strongly linear way with passenger count, which is expected because yellow taxi pricing is trip-based rather than passenger-based.
+This is not surprising because taxi fares are mainly trip-based rather than charged per passenger. Passenger count is therefore more useful for understanding demand type than for explaining the fare itself.
 
-### 4.5 Payment and Tipping
+### 4.4 Payment and Tipping
 
-Payment type distribution:
+Payment behavior was dominated by credit card usage. Out of the cleaned sample, `240,777` trips were paid by credit card and `50,521` by cash, with the remaining trips falling into smaller categories such as unknown, dispute, or no-charge cases.
 
-- Credit card: `240,777`
-- Cash: `50,521`
-- Unknown: `10,340`
-- Dispute: `1,932`
-- No charge: `1,060`
-
-Credit card payments dominate the dataset, which is important because recorded tips are mainly available for electronically paid trips.
-
-Average tip amount by distance band:
+Tip amount increased with trip distance, which was expected because longer trips usually have higher fares:
 
 - `0-1` miles: `2.39`
 - `1-2` miles: `3.06`
@@ -199,29 +90,20 @@ Average tip amount by distance band:
 - `5-10` miles: `7.82`
 - `10+` miles: `13.25`
 
-Average tip percentage by distance tier:
+However, tip percentage told a different story. Average tip percentage was highest for the shortest trips and then declined as distance increased:
 
 - Up to 2 miles: `28.72%`
 - 2 to 5 miles: `22.97%`
 - 5 to 10 miles: `22.40%`
 - 10+ miles: `21.14%`
 
-Interpretation:
+This suggests that passengers tend to tip more generously, in percentage terms, on short and moderate trips than on long expensive ones.
 
-- Tip amount rises with distance because fare rises.
-- Tip percentage falls as trip length increases, which suggests passengers are less generous proportionally on expensive long trips.
+When low-tip trips were compared with high-tip trips, the difference became clearer. Low-tip trips had a higher average distance (`4.73` vs `2.27`) and a higher average fare (`25.24` vs `14.25`). High-tip trips also had a slightly stronger credit card presence. Taken together, this suggests that shorter and cheaper trips are often better from a tipping perspective.
 
-Low-tip and high-tip trip comparison:
+### 4.5 Geographic Concentration
 
-- Low-tip trips had a higher average distance: `4.73` vs `2.27`
-- Low-tip trips had a higher average fare: `25.24` vs `14.25`
-- High-tip trips had a slightly higher credit-card share: `98.70%` vs `96.44%`
-
-This suggests that shorter, lower-fare trips tend to produce better tip percentages.
-
-### 4.6 Geographic Patterns
-
-Top pickup zones:
+The taxi market was heavily concentrated in a relatively small number of zones. The leading pickup zones were:
 
 - `JFK Airport`: `15,417`
 - `Upper East Side South`: `14,195`
@@ -231,7 +113,7 @@ Top pickup zones:
 - `Penn Station/Madison Sq West`: `10,307`
 - `LaGuardia Airport`: `10,280`
 
-Top dropoff zones:
+The leading dropoff zones were:
 
 - `Upper East Side North`: `13,554`
 - `Upper East Side South`: `12,731`
@@ -241,90 +123,49 @@ Top dropoff zones:
 - `Midtown East`: `8,675`
 - `Lincoln Square East`: `8,640`
 
-Interpretation:
+These results show that Manhattan remains the central area of yellow taxi demand, while airports continue to be very important trip origins. This has clear implications for positioning and dispatch strategy.
 
-- Manhattan remains the main demand center.
-- Airport traffic is also a major source of trips, especially at `JFK Airport` and `LaGuardia Airport`.
-- These zones should be the focus of fleet positioning.
+## 5. Detailed Analysis
 
-## 5. Detailed Insights and Strategies
+### 5.1 Route Efficiency
 
-### 5.1 Operational Efficiency
-
-The slowest high-volume routes were concentrated in busy Manhattan corridors:
+One of the more useful operational findings came from comparing route speeds across zones and hours. The slowest high-volume routes were mostly located in dense Manhattan areas:
 
 - `Penn Station/Madison Sq West -> Times Sq/Theatre District` at `12:00`: `3.05 mph`
 - `Times Sq/Theatre District -> Times Sq/Theatre District` at `17:00`: `3.23 mph`
 - `Midtown Center -> Times Sq/Theatre District` at `19:00`: `3.30 mph`
 
-Interpretation:
+These routes are not weak routes in terms of demand. In fact, they are busy and commercially important. The problem is that heavy congestion reduces efficiency. This means that high demand alone should not be used as the only indicator of route attractiveness. Operators also need to consider how long drivers are tied up in slow-moving corridors.
 
-- Dense Midtown corridors are slow but commercially important.
-- High demand does not always mean high efficiency.
-- These routes need congestion-aware dispatching and realistic ETA expectations.
+### 5.2 Weekday, Weekend, and Night Demand
 
-### 5.2 Weekday and Weekend Demand
+The weekday pattern was more commute-driven, while the weekend pattern was more spread into leisure hours. This is a fairly natural result for a city like New York and supports the idea of having different staffing logic for weekdays and weekends.
 
-Weekday traffic is more sharply concentrated around commute hours, while weekend demand is relatively more spread into leisure-heavy periods.
+Night demand also showed a clear geographical pattern. The top night pickup zones were `East Village`, `JFK Airport`, `West Village`, `Clinton East`, and `Lower East Side`. The main night dropoff zones included `East Village`, `Clinton East`, `Murray Hill`, and `East Chelsea`.
 
-Interpretation:
+Although night trips contributed less revenue overall than day trips, they still represented a meaningful segment:
 
-- Weekday driver scheduling should target commute peaks.
-- Weekend scheduling should remain strong into the evening.
+- Day revenue share: `87.44%`
+- Night revenue share: `12.56%`
+
+This means night operations should not be treated as the main revenue engine, but they are still important enough to justify a targeted strategy.
 
 ### 5.3 Pickup and Dropoff Imbalance
 
-Highest pickup/dropoff ratios:
+The pickup-to-dropoff ratio provided another useful perspective on zone behavior. The highest ratios were seen in:
 
 - `East Elmhurst`: `9.06`
 - `JFK Airport`: `4.65`
 - `LaGuardia Airport`: `2.65`
 - `Penn Station/Madison Sq West`: `1.52`
 
-Lowest pickup/dropoff ratios:
+The very low ratios were seen in places such as `Newark Airport`, `Windsor Terrace`, `Whitestone`, and `Greenpoint`.
 
-- `Newark Airport`: `0.00`
-- `Windsor Terrace`: `0.03`
-- `Whitestone`: `0.03`
-- `Greenpoint`: `0.07`
+These results suggest that airports and major travel hubs act as strong trip-origin zones, while some other areas function more as destinations. At the same time, the smallest-volume zones should be interpreted carefully because a small number of rides can exaggerate the ratio.
 
-Interpretation:
+### 5.4 Pricing and Vendor Comparison
 
-- Airports behave as strong outbound trip generators.
-- Some low-ratio zones are more likely to be destinations than origins.
-- Extreme ratio values from low-volume zones should be treated cautiously.
-
-### 5.4 Night Demand
-
-Top night pickup zones:
-
-- `East Village`
-- `JFK Airport`
-- `West Village`
-- `Clinton East`
-- `Lower East Side`
-
-Top night dropoff zones:
-
-- `East Village`
-- `Clinton East`
-- `Murray Hill`
-- `East Chelsea`
-- `Gramercy`
-
-Revenue share:
-
-- Day: `87.44%`
-- Night: `12.56%`
-
-Interpretation:
-
-- Night demand is concentrated in nightlife-heavy Manhattan zones and key airport corridors.
-- Night operations are smaller than daytime operations, but they still form a meaningful niche segment.
-
-### 5.5 Pricing Analysis
-
-Average fare per mile per passenger:
+Average fare per mile per passenger declined sharply as the number of passengers increased:
 
 - 1 passenger: `8.300`
 - 2 passengers: `4.221`
@@ -333,9 +174,9 @@ Average fare per mile per passenger:
 - 5 passengers: `1.525`
 - 6 passengers: `1.274`
 
-This shows that solo riders effectively bear the highest cost per passenger.
+This shows that from the passenger’s point of view, solo travel is the most expensive on a per-person basis.
 
-Average fare per mile by day:
+Average fare per mile also varied by day:
 
 - Monday: `8.137`
 - Tuesday: `8.517`
@@ -345,9 +186,9 @@ Average fare per mile by day:
 - Saturday: `8.532`
 - Sunday: `7.716`
 
-Thursday shows the highest average fare per mile, while Sunday shows the lowest.
+Thursday had the highest average fare per mile, while Sunday had the lowest. This suggests some difference in the quality of revenue across the week, not just in the number of trips.
 
-Vendor comparison by distance tier:
+The vendor comparison by distance tier showed that short trips had the biggest differences:
 
 - Up to 2 miles:
   - Creative Mobile Technologies: `9.652`
@@ -359,31 +200,19 @@ Vendor comparison by distance tier:
   - Creative Mobile Technologies: `4.415`
   - VeriFone: `4.473`
 
-Interpretation:
+This suggests that short-distance pricing is where vendor differences are most visible, while long-distance pricing is much more similar.
 
-- Short trips have the biggest fare-per-mile differences across vendors.
-- Long-trip pricing is much more similar.
+### 5.5 Passenger and Surcharge Patterns
 
-### 5.6 Passenger Trends
+Passenger count by day of week was slightly higher on weekends:
 
-Average passenger count by day:
-
-- Monday: `1.342`
-- Tuesday: `1.319`
-- Wednesday: `1.319`
-- Thursday: `1.331`
 - Friday: `1.389`
 - Saturday: `1.455`
 - Sunday: `1.442`
 
-Interpretation:
+Compared with earlier weekdays, this points toward more group or leisure travel on weekends.
 
-- Weekend trips carry slightly more passengers on average.
-- This is consistent with leisure, family, and group travel.
-
-### 5.7 Surcharges
-
-Surcharge prevalence:
+Surcharge prevalence also showed a useful pricing pattern:
 
 - `improvement_surcharge`: `99.97%`
 - `mta_tax`: `99.37%`
@@ -392,51 +221,26 @@ Surcharge prevalence:
 - `airport_fee`: `8.42%`
 - `tolls_amount`: `8.10%`
 
-Interpretation:
+This shows that some surcharges are effectively built into the standard structure of most taxi trips, while others are linked to specific trip types such as airport or toll-road trips.
 
-- Most base surcharges are nearly universal.
-- Airport fees and tolls are much more route-specific.
-- Some zone-level surcharge extremes are driven by low counts and should not be over-interpreted.
+## 6. Main Insights
 
-## 6. Key Insights
+Looking across the full analysis, five points stand out clearly.
 
-The analysis points to five major business drivers:
-
-1. Demand is strongly time-driven, with the heaviest pressure in the late afternoon and early evening.
-2. Manhattan and airport zones dominate overall trip volume.
-3. Fare is strongly influenced by both distance and trip duration.
-4. Night demand is smaller than daytime demand but remains important in nightlife and airport corridors.
-5. Short trips are valuable because they generate high fare-per-mile and higher tip percentages.
+First, demand is strongly time-driven, and the most important demand window is the late afternoon and early evening. Second, Manhattan and airport zones dominate both volume and strategic importance. Third, revenue is shaped by both distance and duration, which means congestion matters not only operationally but also financially. Fourth, night demand is smaller than daytime demand but still important in nightlife and airport corridors. Fifth, short trips are especially valuable because they generate high fare per mile and relatively high tip percentages.
 
 ## 7. Recommendations
 
-### 7.1 Routing and Dispatch
+The most immediate recommendation is to improve dispatching around the evening peak. Driver availability should be increased before `5 PM` to `7 PM`, not after the rush has already started. Routes around Midtown, Penn Station, and Times Square should be monitored carefully because they combine strong demand with very slow speeds.
 
-- Increase driver availability before the `5 PM` to `7 PM` peak.
-- Use congestion-aware dispatch rules in slow Midtown and Times Square corridors.
-- Evaluate routes using both demand and efficiency, not trip count alone.
+The second recommendation is to position cabs more aggressively in high-demand zones. Airports, Midtown, Upper East Side areas, and major Manhattan business and entertainment districts should receive priority. A separate night positioning plan should be used for areas such as `East Village`, `West Village`, `Clinton East`, and airport corridors, where nighttime demand remains meaningful.
 
-### 7.2 Cab Positioning
-
-- Keep strong cab availability near `JFK Airport`, `LaGuardia Airport`, `Midtown Center`, and the `Upper East Side`.
-- Build a separate night positioning strategy around `East Village`, `West Village`, `Clinton East`, and other nightlife zones.
-- Rebalance cabs away from low-origin zones and toward pickup-heavy zones.
-
-### 7.3 Pricing
-
-- Protect yield during high-demand evening periods.
-- Monitor short-trip pricing carefully because short trips produce the highest fare per mile.
-- Use targeted promotions during softer periods such as Sunday or quieter off-peak hours.
-- Benchmark short-distance fares closely across vendors.
+The third recommendation concerns pricing. High-demand evening periods should be protected from unnecessary discounting. Short trips deserve special attention because they generate the highest fare per mile and show the clearest vendor pricing differences. Softer periods such as Sunday and other low-yield windows can be used for targeted promotions instead of broad price reductions across the whole network.
 
 ## 8. Assumptions and Limitations
 
-- The analysis is based on a `0.8%` stratified sample, not the full dataset.
-- Scaled hourly trip counts are estimates.
-- Some zone-level extremes are based on low volumes and should be interpreted carefully.
-- Recorded tip data may understate cash-tip behavior.
-- Outlier treatment improves realism but may remove a few legitimate edge cases.
+This analysis is based on a `0.8%` stratified sample rather than the full raw dataset, so scaled values should be treated as estimates. Some zone-level extremes are based on small trip counts and should not be over-interpreted. In addition, tip values mainly reflect recorded tips and may not fully capture cash-tip behavior. Finally, the outlier treatment improves realism for analysis, but it may remove a small number of unusual but valid trips.
 
 ## 9. Conclusion
 
-The 2023 NYC yellow taxi data shows a network shaped by strong evening demand, dense Manhattan activity, major airport traffic, and pricing that is heavily influenced by both distance and congestion. The most important operating opportunities lie in aligning supply with evening peaks, maintaining strong presence in high-demand Manhattan and airport zones, and protecting revenue on short, high-yield trips. A focused strategy built around time-based staffing, location-based positioning, and congestion-aware dispatching would improve both service efficiency and revenue performance.
+The 2023 NYC yellow taxi data shows a system shaped by strong evening demand, heavy Manhattan concentration, major airport pickup activity, and pricing that depends closely on both distance and traffic conditions. The clearest opportunity for a taxi operator is to match supply more closely to those time-and-location patterns. A strategy built around better peak-hour staffing, stronger positioning in airport and core Manhattan zones, and smarter dispatching through congested corridors would improve both efficiency and revenue performance.
