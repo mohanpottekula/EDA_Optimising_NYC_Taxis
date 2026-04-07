@@ -48,6 +48,12 @@ When the hourly counts were scaled using the sampling fraction, the five busiest
 
 This is an important operational finding. It suggests that the strongest pressure on taxi supply does not occur randomly through the day. Instead, it builds toward the evening, meaning drivers should already be positioned and available before the peak begins.
 
+![Taxi pickups by hour](report_assets/pickups_by_hour.png)
+
+![Taxi pickups by day](report_assets/pickups_by_day.png)
+
+![Taxi pickups by month](report_assets/pickups_by_month.png)
+
 ### 4.2 Revenue Trends
 
 Revenue varied noticeably across the year. Based on the sampled data, the strongest revenue months were `May` at `809,656.92` and `October` at `806,265.72`, while the weakest were `February` at `626,706.67` and `August` at `634,866.36`. This shows that revenue opportunity is not evenly distributed through the year.
@@ -61,11 +67,19 @@ Quarterly revenue shares supported the same conclusion:
 
 Q2 and Q4 made the largest contribution to total revenue, which suggests stronger business conditions in those periods. From an operator’s point of view, this means staffing and planning decisions should consider seasonal variation rather than assuming one steady pattern across the year.
 
+![Monthly revenue trend](report_assets/monthly_revenue_trend.png)
+
+![Quarterly revenue share](report_assets/quarterly_revenue_share.png)
+
 ### 4.3 Fare, Distance, and Duration
 
 The financial variables behaved largely as expected. The relationship between `trip_distance` and `fare_amount` was extremely strong, with a correlation of `0.961`. The relationship between trip duration and fare was also strong, with a correlation of `0.873`.
 
 This indicates that both distance and time matter in explaining how much a trip earns. Distance is the strongest direct driver, but trip duration is also important because congestion increases the time spent on a trip and therefore affects fare and driver productivity.
+
+![Fare versus distance](report_assets/fare_vs_distance.png)
+
+![Fare versus duration](report_assets/fare_vs_duration.png)
 
 Average fare by passenger count did not increase in a simple linear way:
 
@@ -77,6 +91,8 @@ Average fare by passenger count did not increase in a simple linear way:
 - 6 passengers: `18.95`
 
 This is not surprising because taxi fares are mainly trip-based rather than charged per passenger. Passenger count is therefore more useful for understanding demand type than for explaining the fare itself.
+
+![Average fare by passenger count](report_assets/avg_fare_by_passenger_count.png)
 
 ### 4.4 Payment and Tipping
 
@@ -100,6 +116,12 @@ However, tip percentage told a different story. Average tip percentage was highe
 This suggests that passengers tend to tip more generously, in percentage terms, on short and moderate trips than on long expensive ones.
 
 When low-tip trips were compared with high-tip trips, the difference became clearer. Low-tip trips had a higher average distance (`4.73` vs `2.27`) and a higher average fare (`25.24` vs `14.25`). High-tip trips also had a slightly stronger credit card presence. Taken together, this suggests that shorter and cheaper trips are often better from a tipping perspective.
+
+![Payment type distribution](report_assets/payment_type_distribution.png)
+
+![Average tip by distance band](report_assets/avg_tip_by_distance_band.png)
+
+![Tip percentage patterns](report_assets/tip_percentage_patterns.png)
 
 ### 4.5 Geographic Concentration
 
@@ -125,6 +147,8 @@ The leading dropoff zones were:
 
 These results show that Manhattan remains the central area of yellow taxi demand, while airports continue to be very important trip origins. This has clear implications for positioning and dispatch strategy.
 
+![Zone-wise trip choropleth](report_assets/zonewise_trip_choropleth.png)
+
 ## 5. Detailed Analysis
 
 ### 5.1 Route Efficiency
@@ -137,9 +161,15 @@ One of the more useful operational findings came from comparing route speeds acr
 
 These routes are not weak routes in terms of demand. In fact, they are busy and commercially important. The problem is that heavy congestion reduces efficiency. This means that high demand alone should not be used as the only indicator of route attractiveness. Operators also need to consider how long drivers are tied up in slow-moving corridors.
 
+![Slowest high-volume routes](report_assets/slowest_high_volume_routes.png)
+
 ### 5.2 Weekday, Weekend, and Night Demand
 
 The weekday pattern was more commute-driven, while the weekend pattern was more spread into leisure hours. This is a fairly natural result for a city like New York and supports the idea of having different staffing logic for weekdays and weekends.
+
+![Weekday versus weekend hourly pattern](report_assets/weekday_weekend_hourly_pattern.png)
+
+![Hourly pattern by day of week](report_assets/weekday_weekend_hourly_pattern_2.png)
 
 Night demand also showed a clear geographical pattern. The top night pickup zones were `East Village`, `JFK Airport`, `West Village`, `Clinton East`, and `Lower East Side`. The main night dropoff zones included `East Village`, `Clinton East`, `Murray Hill`, and `East Chelsea`.
 
@@ -149,6 +179,12 @@ Although night trips contributed less revenue overall than day trips, they still
 - Night revenue share: `12.56%`
 
 This means night operations should not be treated as the main revenue engine, but they are still important enough to justify a targeted strategy.
+
+![Top pickup zone hourly trends](report_assets/top_zone_hourly_trends.png)
+
+![Top dropoff zone hourly trends](report_assets/top_zone_hourly_trends_2.png)
+
+![Day versus night revenue share](report_assets/day_night_revenue_share.png)
 
 ### 5.3 Pickup and Dropoff Imbalance
 
@@ -202,6 +238,14 @@ The vendor comparison by distance tier showed that short trips had the biggest d
 
 This suggests that short-distance pricing is where vendor differences are most visible, while long-distance pricing is much more similar.
 
+![Fare per mile per passenger](report_assets/fare_per_mile_per_passenger.png)
+
+![Fare per mile by hour and day](report_assets/fare_per_mile_by_hour_and_day.png)
+
+![Vendor fare by hour](report_assets/vendor_fare_per_mile_by_hour.png)
+
+![Vendor fare by distance tier](report_assets/vendor_fare_by_distance_tier.png)
+
 ### 5.5 Passenger and Surcharge Patterns
 
 Passenger count by day of week was slightly higher on weekends:
@@ -211,6 +255,10 @@ Passenger count by day of week was slightly higher on weekends:
 - Sunday: `1.442`
 
 Compared with earlier weekdays, this points toward more group or leisure travel on weekends.
+
+![Passenger count by hour and day](report_assets/passenger_count_by_hour_and_day.png)
+
+![Average passenger count by zone](report_assets/avg_passenger_count_by_zone.png)
 
 Surcharge prevalence also showed a useful pricing pattern:
 
@@ -222,6 +270,8 @@ Surcharge prevalence also showed a useful pricing pattern:
 - `tolls_amount`: `8.10%`
 
 This shows that some surcharges are effectively built into the standard structure of most taxi trips, while others are linked to specific trip types such as airport or toll-road trips.
+
+![Extra charge patterns](report_assets/extra_charge_patterns.png)
 
 ## 6. Main Insights
 
